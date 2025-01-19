@@ -1,7 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const sqlite3 = require("sqlite3").verbose();
+// const sqlite3 = require("sqlite3").verbose();
+const sqlite3 = require('sqlite3').verbose();
+
+
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
@@ -16,13 +19,15 @@ app.use(express.static("public"));
 app.set("view engine", "ejs");
 
 // Database Setup
-const db = new sqlite3.Database("./database/vulnerable.db", (err) => {
-  if (err) {
-    console.error(err.message);
-  } else {
-    console.log("Connected to the SQLite database.");
-  }
-});
+// const db = new sqlite3.Database("./database/vulnerable.db", (err) => {
+//   if (err) {
+//     console.error(err.message);
+//   } else {
+//     console.log("Connected to the SQLite database.");
+//   }
+// });
+
+const db = new sqlite3.Database(':memory:');
 
 // Vulnerable SQL Table
 db.serialize(() => {
@@ -49,6 +54,7 @@ app.get("/webshell", (req, res) => res.render("webshell"));
 app.get("/xss", (req, res) => res.render("xss"));
 app.get("/phishing", (req, res) => res.render("phishing"));
 app.get("/login", (req, res) => res.render("login"));
+
 
 // Web Shell Vulnerability
 app.post("/upload", upload.single("file"), (req, res) => {
