@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO users (username, password, role) VALUES
 ('admin', 'password123', 'admin'),
 ('user', 'user123', 'user');
+('Tan Ming Xuan', '123123', 'user');

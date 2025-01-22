@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 // const sqlite3 = require("sqlite3").verbose();
 const sqlite3 = require('sqlite3').verbose();
+const rateLimit = require('express-rate-limit');  
 
 
 const multer = require("multer");
@@ -17,6 +18,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static("public"));
 app.set("view engine", "ejs");
+app.use(bodyParser.json());
+
 
 // Database Setup
 // const db = new sqlite3.Database("./database/vulnerable.db", (err) => {
@@ -64,15 +67,23 @@ app.post("/upload", upload.single("file"), (req, res) => {
   res.send(`<pre>${content}</pre>`);
 });
 
-// SQL Injection Vulnerability
-app.post("/auth", (req, res) => {
+
+
+// Rate limiter middleware
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: "Too many login attempts. Please try again later.",
+});
+
+app.post("/auth", authRateLimiter, (req, res) => {
   const { username, password } = req.body;
-  const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
-  db.get(query, (err, row) => {
+  const query = `SELECT * FROM users WHERE username = ? AND password = ?`;
+  db.get(query, [username, password], (err, row) => {
     if (row) {
       res.send(`Welcome, ${row.username}. Your role is: ${row.role}`);
     } else {
-      res.send("Invalid credentials or SQL Injection attempt.");
+      res.send("Invalid credentials.");
     }
   });
 });
