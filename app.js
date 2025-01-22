@@ -4,7 +4,7 @@ const cookieParser = require("cookie-parser");
 // const sqlite3 = require("sqlite3").verbose();
 const sqlite3 = require('sqlite3').verbose();
 const rateLimit = require('express-rate-limit');  
-
+const logger = require('./logger');
 
 const multer = require("multer");
 const fs = require("fs");
@@ -19,7 +19,19 @@ app.use(cookieParser());
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 app.use(bodyParser.json());
+// Middleware to log network requests
+app.use((req, res, next) => {
+  const networkInfo = {
+    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+    userAgent: req.headers['user-agent'],
+    method: req.method,
+    url: req.originalUrl,
+    headers: req.headers,
+  };
 
+  logger.info("Incoming request", networkInfo);
+  next();
+});
 
 // Database Setup
 // const db = new sqlite3.Database("./database/vulnerable.db", (err) => {
@@ -64,6 +76,7 @@ app.post("/upload", upload.single("file"), (req, res) => {
   const { file } = req;
   if (!file) return res.status(400).send("No file uploaded.");
   const content = fs.readFileSync(file.path, "utf8");
+  logger.info("file uploaded!")
   res.send(`<pre>${content}</pre>`);
 });
 
@@ -81,8 +94,10 @@ app.post("/auth", authRateLimiter, (req, res) => {
   const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
   db.get(query, (err, row) => {
     if (row) {
+      logger.info("User authenticated", { username: row.username, role: row.role });
       res.send(`Welcome, ${row.username}. Your role is: ${row.role}`);
     } else {
+      logger.warn("Invalid login attempt", { username });
       res.send("Invalid credentials.");
     }
   });
@@ -91,6 +106,7 @@ app.post("/auth", authRateLimiter, (req, res) => {
 // XSS Vulnerability
 app.post("/post", (req, res) => {
   const { comment } = req.body;
+  logger.info("User posted", { post: comment});
   res.send(`You posted: ${comment}`);
 });
 
@@ -98,6 +114,7 @@ app.post("/post", (req, res) => {
 app.post("/phishing-login", (req, res) => {
   const { username, password } = req.body;
   fs.appendFileSync("phished-credentials.txt", `Username: ${username}, Password: ${password}\n`);
+  logger.info("phishing : ", { username: username,password:password});
   res.send("Credentials captured!");
 });
 
