@@ -73,13 +73,13 @@ app.post("/upload", upload.single("file"), (req, res) => {
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Limit each IP to 5 login attempts per windowMs
-  message: "Too many login attempts. Please try again later.",
+  message: "Too many login attempts. Please try again later.",  
 });
 
 app.post("/auth", authRateLimiter, (req, res) => {
   const { username, password } = req.body;
-  const query = `SELECT * FROM users WHERE username = ? AND password = ?`;
-  db.get(query, [username, password], (err, row) => {
+  const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+  db.get(query, (err, row) => {
     if (row) {
       res.send(`Welcome, ${row.username}. Your role is: ${row.role}`);
     } else {
