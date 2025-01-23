@@ -1,22 +1,27 @@
-const { createLogger, format, transports } = require('winston');
-const Syslog = require('winston-syslog').Syslog;
+const { createLogger, format, transports } = require("winston");
+const Syslog = require("winston-syslog").Syslog;
+const path = require("path");
+
+const logFilePath = path.join(__dirname, "logs", "application.log");
+
+// Ensure the logs directory exists
+const fs = require("fs");
+if (!fs.existsSync("logs")) {
+  fs.mkdirSync("logs");
+}
 
 const logger = createLogger({
-  level: 'info',
+  level: "info",
   format: format.combine(
     format.timestamp(),
     format.json() // JSON format for structured logging
   ),
   transports: [
     new transports.Console(), // Logs to console
-    new Syslog({
-      host: '192.168.8.100', // Replace with your Wazuh server's IP
-      port: 443, // Syslog default port
-      protocol: 'udp4', // Use 'tcp4' if your setup requires it
-      localhost: 'my-node-app', // Identify your application
-      app_name: 'node-app', // Application name in logs
-      facility: 'local0' // Default syslog facility
-    })
+    new transports.File({
+      filename: logFilePath, // Save logs to a local file
+      level: "info", // Log only info level and above
+    }),
   ],
 });
 
